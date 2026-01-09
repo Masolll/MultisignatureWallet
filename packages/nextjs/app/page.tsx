@@ -1,79 +1,208 @@
 "use client";
 
-import Link from "next/link";
-import { Address } from "@scaffold-ui/components";
+import { useState } from "react";
 import type { NextPage } from "next";
-import { hardhat } from "viem/chains";
 import { useAccount } from "wagmi";
-import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { useTargetNetwork } from "~~/hooks/scaffold-eth";
+import MultisigWallet from "~~/../hardhat/deployments/localhost/MultisigWallet.json";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 const Home: NextPage = () => {
-  const { address: connectedAddress } = useAccount();
-  const { targetNetwork } = useTargetNetwork();
+  const [proposalRecipient, setProposalRecipient] = useState("");
+  const [proposalAmount, setProposalAmount] = useState("");
 
-  return (
-    <>
-      <div className="flex items-center flex-col grow pt-10">
-        <div className="px-5">
-          <h1 className="text-center">
-            <span className="block text-2xl mb-2">Welcome to</span>
-            <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
-          </h1>
-          <div className="flex justify-center items-center space-x-2 flex-col">
-            <p className="my-2 font-medium">Connected Address:</p>
-            <Address
-              address={connectedAddress}
-              chain={targetNetwork}
-              blockExplorerAddressLink={
-                targetNetwork.id === hardhat.id ? `/blockexplorer/address/${connectedAddress}` : undefined
-              }
-            />
-          </div>
-          <p className="text-center text-lg">
-            Get started by editing{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/nextjs/app/page.tsx
-            </code>
+  const { address } = useAccount();
+
+  const { writeContractAsync } = useScaffoldWriteContract("MultisigWallet");
+
+  const { data: balance, isLoading: isLoadingBalance } = useScaffoldReadContract({
+    contractName: "MultisigWallet",
+    functionName: "getBalance",
+  });
+  const { data: owners, isLoading: isLoadingOwners } = useScaffoldReadContract({
+    contractName: "MultisigWallet",
+    functionName: "getOwners",
+  });
+
+  const { data: proposals, isLoading: isLoadingProposals } = useScaffoldReadContract({
+    contractName: "MultisigWallet",
+    functionName: "getProposals",
+  });
+
+  const orederedProposals = proposals?.toReversed();
+  const contractAddress = MultisigWallet.address;
+
+  const createProposal = async (recipient: string, amount: string) => {
+    if (!recipient || !amount) {
+      alert("Заполните оба поля");
+      return;
+    }
+    try {
+      const amountBigInt = BigInt(amount);
+      await writeContractAsync({
+        functionName: "createProposal",
+        args: [recipient, amountBigInt],
+      });
+    } catch (error) {
+      console.error("Transaction failed:", error);
+    }
+  };
+
+  type contractFunctionName = "approveProposal" | "cancelProposal" | "createProposal" | "executeProposal";
+  const editProposal = (functionName: contractFunctionName, proposalId: bigint) => {
+    try {
+      writeContractAsync({
+        functionName: functionName,
+        args: [proposalId],
+      });
+    } catch (error) {
+      console.log("Transaction failed:", error);
+    }
+  };
+
+  const approveProposal = async (proposalId: bigint) => editProposal("approveProposal", proposalId);
+
+  const executeProposal = async (proposalId: bigint) => editProposal("executeProposal", proposalId);
+
+  const cancelProposal = async (proposalId: bigint) => editProposal("cancelProposal", proposalId);
+
+  const proposalStatus: Record<number, string> = {
+    0: "Pending",
+    1: "Ready",
+    2: "Executed",
+    3: "Cancelled",
+  };
+
+  return isLoadingOwners || !owners || isLoadingBalance || isLoadingProposals ? (
+    <div>Загрузка...</div>
+  ) : (
+    <div className="flex justify-center mt-10">
+      <div className="w-full max-w-md border border-base-300 rounded-2xl p-6 bg-base-100 shadow">
+        <h1 className="text-center text-lg font-bold mb-6">Multisignature wallet</h1>
+
+        <div className="border border-base-300 rounded-xl p-4 mb-6">
+          <h2 className="font-semibold mb-2 font-bold text-center">Wallet info</h2>
+          <p className="text-sm">
+            Contract address:
+            <span className="font-mono"> {contractAddress}</span>
           </p>
-          <p className="text-center text-lg">
-            Edit your smart contract{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              YourContract.sol
-            </code>{" "}
-            in{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/hardhat/contracts
-            </code>
+          <p className="text-sm">
+            Balance:
+            <span className="font-mono"> {balance} WEI</span>
+          </p>
+          <p className="text-sm">
+            Owners:
+            {owners!.map((owner, index) => (
+              <li key={index} className="font-mono">
+                {owner}
+              </li>
+            ))}
           </p>
         </div>
 
-        <div className="grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col md:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your smart contract using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Contracts
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the{" "}
-                <Link href="/blockexplorer" passHref className="link">
-                  Block Explorer
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-          </div>
+        <div className="border border-base-300 rounded-xl p-4 mb-6">
+          <h2 className="font-semibold mb-3 text-center">Create proposal</h2>
+
+          <input
+            type="text"
+            placeholder="To: 0x..."
+            className="input input-bordered w-full mb-3"
+            value={proposalRecipient}
+            onChange={e => setProposalRecipient(e.target.value)}
+          />
+
+          <input
+            type="text"
+            placeholder="Amount: 50 wei"
+            className="input input-bordered w-full mb-4"
+            value={proposalAmount}
+            onChange={e => setProposalAmount(e.target.value)}
+          />
+
+          <button className="btn btn-outline w-full" onClick={() => createProposal(proposalRecipient, proposalAmount)}>
+            Create
+          </button>
+        </div>
+
+        <div className="border border-base-300 rounded-xl p-4 mb-6">
+          <h2 className="font-semibold mb-4 text-center">Actual proposals</h2>
+
+          {orederedProposals
+            ?.filter(
+              element => proposalStatus[element.status] == "Pending" || proposalStatus[element.status] == "Ready",
+            )
+            .map((element, index) => (
+              <div className="border border-base-300 rounded-lg p-3 mb-4" key={index}>
+                <p className="text-sm">
+                  To: <span className="font-mono">{element.recipient}</span>
+                </p>
+                <p className="text-sm">Amount: {element.amount} wei</p>
+                <p className="text-sm">
+                  Confirmations: {element.approvers.length} / {Math.trunc(owners.length / 2) + 1}
+                </p>
+                <p className="text-sm">Status: {proposalStatus[element.status]}</p>
+                <p className="text-sm mb-3">
+                  Approvers:
+                  {element.approvers.map((approver, index) => (
+                    <li key={index} className="font-mono">
+                      {approver}
+                    </li>
+                  ))}
+                </p>
+
+                {proposalStatus[element.status] == "Pending" ? (
+                  <button
+                    className="btn btn-sm btn-outline w-full mb-4"
+                    onClick={() => approveProposal(BigInt(element.id))}
+                  >
+                    Approve
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-sm btn-outline w-full mb-4"
+                    onClick={() => executeProposal(BigInt(element.id))}
+                  >
+                    Execute
+                  </button>
+                )}
+                {element.owner == address && (
+                  <button className="btn btn-sm btn-outline w-full" onClick={() => cancelProposal(BigInt(element.id))}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+            ))}
+        </div>
+
+        <div className="border border-base-300 rounded-xl p-4 mb-6">
+          <h2 className="font-semibold mb-4 text-center">History proposals</h2>
+
+          {orederedProposals
+            ?.filter(
+              element => proposalStatus[element.status] == "Cancelled" || proposalStatus[element.status] == "Executed",
+            )
+            .map((element, index) => (
+              <div className="border border-base-300 rounded-lg p-3 mb-4" key={index}>
+                <p className="text-sm">
+                  To: <span className="font-mono">{element.recipient}</span>
+                </p>
+                <p className="text-sm">Amount: {element.amount} wei</p>
+                <p className="text-sm">
+                  Confirmations: {element.approvers.length} / {Math.trunc(owners.length / 2) + 1}
+                </p>
+                <p className="text-sm">Status: {proposalStatus[element.status]}</p>
+                <p className="text-sm mb-3">
+                  Approvers:
+                  {element.approvers.map((approver, index) => (
+                    <li key={index} className="font-mono">
+                      {approver}
+                    </li>
+                  ))}
+                </p>
+              </div>
+            ))}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -12,6 +12,7 @@ const compat = new FlatCompat({
 
 export default defineConfig([
   {
+    ignores: ["next-env.d.ts"],
     plugins: {
       prettier: prettierPlugin,
     },
@@ -30,3 +31,5 @@ export default defineConfig([
     },
   },
 ]);
+
+
