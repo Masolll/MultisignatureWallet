@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
 contract MultisigWallet {
@@ -32,7 +33,7 @@ contract MultisigWallet {
     error ProposalNotExist();
     error SenderAlreadyApprove();
     error ConfirmationsComplete();
-    error OnlyOwnerCanCancelProposal();
+    error OnlyProposalOwnerCanCancel();
     error ProposalAlreadyFinalized();
     error ProposalNotReady();
     error InsufficientBalance();
@@ -100,7 +101,7 @@ contract MultisigWallet {
 
     function cancelProposal(uint proposalId) public {
         require(proposalId < proposals.length, ProposalNotExist());
-        require(proposals[proposalId].owner == msg.sender, OnlyOwnerCanCancelProposal());
+        require(proposals[proposalId].owner == msg.sender, OnlyProposalOwnerCanCancel());
         require(proposals[proposalId].status == ProposalStatus.Pending || proposals[proposalId].status == ProposalStatus.Ready, ProposalAlreadyFinalized());
         proposals[proposalId].status = ProposalStatus.Cancelled;
     } 
