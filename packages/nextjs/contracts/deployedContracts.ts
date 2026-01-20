@@ -32,12 +32,12 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "OnlyOwnerCanCancelProposal",
+          name: "OnlyOwners",
           type: "error",
         },
         {
           inputs: [],
-          name: "OnlyOwners",
+          name: "OnlyProposalOwnerCanCancel",
           type: "error",
         },
         {

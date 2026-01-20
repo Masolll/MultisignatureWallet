@@ -1,88 +1,149 @@
-# 🏗 Scaffold-ETH 2
+# MultisigWallet DApp
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+**MultisigWallet** — децентрализованный кошелек с мультиподписью, построенный на базе scaffold-eth-2. 
+Позволяет группе владельцев совместно управлять средствами, создавая, одобряя и выполняя транзакции после достижения порога подтверждений.
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+---
+## 🌟 Возможности кошелька
 
-⚙️ Built using NextJS, RainbowKit, Foundry/Hardhat, Wagmi, Viem, and Typescript.
+- **Создание предложений на перевод средств**  
+  Владельцы кошелька могут создавать предложения с указанием получателя и суммы.
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+- **Одобрение предложений владельцами**  
+  Каждый владелец может подтвердить предложение. Для выполнения требуется, чтобы количество подтверждений превышало половину от числа всех владельцев.
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+- **Автоматическое одобрение создателем**  
+  Создатель предложения автоматически становится первым одобряющим.
 
-## Requirements
+- **Выполнение предложений после подтверждений**  
+  Как только предложение набирает необходимое количество подтверждений, оно становится готовым к выполнению, и средства можно перевести.
 
-Before you begin, you need to install the following tools:
+- **Отмена предложения**  
+  Только создатель предложения может его отменить, если оно ещё не выполнено.
 
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+- **Пополнение кошелька**  
+  Контракт можно пополнять эфиром через receive/fallback.
 
-## Quickstart
+- **Просмотр информации о кошельке**  
+  - Баланс кошелька  
+  - Список владельцев  
+  - Список всех предложений и их статусы
 
-To get started with Scaffold-ETH 2, follow the steps below:
+---
 
-1. Install the latest version of Scaffold-ETH 2
+## 📊 Смарт-контракт
 
+**Контракт:** MultisigWallet.sol  
+**Версия Solidity:** ^0.8.28  
+**Лицензия:** MIT   
+**Расположение:** packages/hardhat/contracts/MultisigWallet.sol  
+
+### Основные функции:
+
+| Название | Описание |
+|-----------|----------|
+| `createProposal(address recipient, uint amount)` | Создаёт предложение на перевод криптовалюты |
+| `approveProposal(uint proposalId)` | Позволяет одобрить предложение владельцам кошелька |
+| `executeProposal(uint proposalId)` | Выполняет предложение после достаточного количества подтверждений |
+| `cancelProposal(uint proposalId)` | Позволяет владельцу предложения его отменить |
+| `getOwners()` | Возвращает список владельцев |
+| `getBalance()` | Возвращает баланс контракта |
+| `getProposals()` | Возвращает список всех предложений |
+
+### Особенности контракта:
+
+- Владельцы кошелька задаются при деплое контракта  
+- Создатель предложения автоматически становится первым одобряющим  
+- Для выполнения предложения необходимо, чтобы количество подтверждений превышало половину всех владельцев  
+- Смарт-контракт предотвращает повторное одобрение и выполнение предложений  
+
+---
+
+## 📋 Предварительные требования
+
+- Node.js (версия 18 или выше)
+- MetaMask или любой Web3-кошелек
+
+---
+
+## 🚀 Быстрый старт
+
+### 1. Установите необходимые зависимости
+```bash
+yarn install
 ```
-npx create-eth@latest
-```
 
-This command will install all the necessary packages and dependencies, so it might take a while.
-
-> [!NOTE]
-> You can also initialize your project with one of our extensions to add specific features or starter-kits. Learn more in our [extensions documentation](https://docs.scaffoldeth.io/extensions/).
-
-2. Run a local network in the first terminal:
-
-```
+### 2. Запустите локальный блокчейн
+```bash
 yarn chain
 ```
 
-This command starts a local Ethereum network that runs on your local machine and can be used for testing and development. Learn how to [customize your network configuration](https://docs.scaffoldeth.io/quick-start/environment#1-initialize-a-local-blockchain).
-
-3. On a second terminal, deploy the test contract:
-
-```
+### 3. Разверните смарт-контракт
+```bash
 yarn deploy
 ```
 
-This command deploys a test smart contract to the local network. You can find more information about how to customize your contract and deployment script in our [documentation](https://docs.scaffoldeth.io/quick-start/environment#2-deploy-your-smart-contract).
-
-4. On a third terminal, start your NextJS app:
-
-```
+### 4. Запустите приложение
+```bash
 yarn start
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+### 5. Откройте приложение
+Перейдите по адресу `http://localhost:3000` в вашем браузере.
 
-**What's next**:
+---
 
-Visit the [What's next section of our docs](https://docs.scaffoldeth.io/quick-start/environment#whats-next) to learn how to:
+## 📝 Руководство по использованию
 
-- Edit your smart contracts
-- Edit your deployment scripts
-- Customize your frontend
-- Edit the app config
-- Writing and running tests
-- [Setting up external services and API keys](https://docs.scaffoldeth.io/deploying/deploy-smart-contracts#configuration-of-third-party-services-for-production-grade-apps)
+### Главная страница
+Если вы все сделали правильно, у вас должна загрузится главная страница кошелька
 
-## Documentation
+![Главная страница](./screenshots/wallet.png)
 
-Visit our [docs](https://docs.scaffoldeth.io) to learn all the technical details and guides of Scaffold-ETH 2.
+### 1️⃣ Создание нового предложения
 
-To know more about its features, check out our [website](https://scaffoldeth.io).
+Для создания предложения укажите адерс получателя и сумму в единицах WEI
 
-## Contributing to Scaffold-ETH 2
+![Создание предложения](./screenshots/createProposal.png)
 
-We welcome contributions to Scaffold-ETH 2!
+Перейдите в MetaMask или другой web3 кошелек и подтвердите транзакцию
 
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+![Создание предложения в MetaMask](./screenshots/createProposalMetaMask.png)
+
+### 2️⃣ Подтверждение предложения
+
+Все актуальные предложения расположены в соответсвующей секции "Actual Proposals". Для подтверждения перевода нажмите кнопку Approve.
+
+![Подтверждение предложения](./screenshots/actualProposalsApprove.png)
+
+Перейдите в MetaMask или другой web3 кошелек и подтвердите транзакцию
+
+![Одобрение предложения в MetaMask](./screenshots/approveProposalMetaMask.png)
+
+### 3️⃣ Выполнение предложения
+
+По достижению необходимого числа подтверждений появится кнопка Execute. Для выполнения транзакции необходимо нажать на нее.
+
+⚠️ **Важно! Убедитесь, что криптовалюты на счете достаточно для совершения перевода.**
+
+![Выполнение предложения](./screenshots/actualProposalsExecute.png)
+
+Перейдите в MetaMask или другой web3 кошелек и подтвердите транзакцию
+
+![Выполение предложения в MetaMask](./screenshots/executeProposalMetaMask.png)
+
+### История предложений
+
+Все выполненные и отмененные предложения попадают в отдельную секцию "History proposals".
+
+![История предложений](./screenshots/historyProposals.png)
+
+---
+
+## 🏁 Заключение
+
+MultisigWallet — это учебный проект, созданный для изучения смарт-контрактов с мультиподписями и создания приложения на базе scaffold-eth-2.  
+
+⚠️ **Важно:** Перед использованием в основной сети (Mainnet) необходимо провести **полноценный аудит контракта**, так как данный проект предназначен только для образовательных целей и может содержать уязвимости.  
+
+Используйте этот проект на тестовых сетях (Sepolia, Goerli и др.) для безопасного изучения и тестирования функционала.
